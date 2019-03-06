@@ -1,0 +1,24 @@
+name: jetson-tx1
+version: '1'
+summary: jetson-tx1 gadget
+base: core18
+description: |
+ Bootloader files and partitoning data to create a
+ bootable Ubuntu Core image for the jetson TX1 device
+type: gadget
+architectures:
+  - arm64
+confinement: strict
+grade: stable
+
+parts:
+  uboot-env:
+    plugin: nil
+    source: uboot-env
+    override-build: |
+      mkenvimage -r -s 131072 -o uboot.env uboot.env.in
+      cp "$SNAPCRAFT_PART_BUILD"/uboot.env "$SNAPCRAFT_PART_INSTALL"/
+      # Link needed for ubuntu-image to work properly
+      cd "$SNAPCRAFT_PART_INSTALL"/; ln -s uboot.env uboot.conf
+    build-packages:
+      - u-boot-tools

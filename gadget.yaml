@@ -1,0 +1,66 @@
+volumes:
+  jetson:
+    bootloader: u-boot
+    schema: gpt
+    structure:
+      - name: system-boot
+        role: system-boot
+        type: 0FC63DAF-8483-4772-8E79-3D69D8477DE4
+        filesystem: ext4
+        filesystem-label: system-boot
+        offset: 17408
+        size: 67108864
+      - name: TBC
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: EBT
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: BPF
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: WB0
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 6291456
+      - name: RP1
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: TOS
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 6291456
+      - name: EKS
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: FX
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: BMP
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 134217728
+      - name: SOS
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 20971520
+      - name: EXI
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 67108864
+      - name: LNX
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 67108864
+      - name: DTB
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: NXT
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: MXB
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 6291456
+      - name: MXP
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 6291456
+      - name: USP
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: UDA
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
