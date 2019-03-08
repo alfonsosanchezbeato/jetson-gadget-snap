@@ -1,0 +1,49 @@
+From 52d0f00061b41f2f17c123137fde8e7633538da2 Mon Sep 17 00:00:00 2001
+From: Tom Rini <trini@konsulko.com>
+Date: Sun, 20 Aug 2017 22:30:15 -0400
+Subject: [PATCH 14/15] fs: ext4: Fix journal overrun issue reported by
+ Coverity
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+While &p_jdb[fs->blksz] is a valid expression (it points *one* char
+sized element past the end of the array, e.g. &p_jdb[fs->blksz + 1] is
+invalid (according to the C standard (C99/C11)).
+
+Changing this to tag = (struct ext3_journal_block_tag *)(p_jdb + ofs);
+
+Cc: Stefan Brüns <stefan.bruens@rwth-aachen.de>
+Suggested-by: Stefan Brüns <stefan.bruens@rwth-aachen.de>
+Reported-by: Coverity (CID: 165117, 165110)
+Signed-off-by: Tom Rini <trini@konsulko.com>
+Reviewed-by: Stefan Brüns <stefan.bruens@rwth-aachen.de>
+---
+ fs/ext4/ext4_journal.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/ext4/ext4_journal.c b/fs/ext4/ext4_journal.c
+index 5a25be4c8a..fed6287eac 100644
+--- a/fs/ext4/ext4_journal.c
++++ b/fs/ext4/ext4_journal.c
+@@ -355,7 +355,7 @@ void recover_transaction(int prev_desc_logical_no)
+ 	ofs = sizeof(struct journal_header_t);
+ 
+ 	do {
+-		tag = (struct ext3_journal_block_tag *)&p_jdb[ofs];
++		tag = (struct ext3_journal_block_tag *)(p_jdb + ofs);
+ 		ofs += sizeof(struct ext3_journal_block_tag);
+ 
+ 		if (ofs > fs->blksz)
+@@ -466,7 +466,7 @@ int ext4fs_check_journal_state(int recovery_flag)
+ 			ofs = sizeof(struct journal_header_t);
+ 			do {
+ 				tag = (struct ext3_journal_block_tag *)
+-				    &p_jdb[ofs];
++				    (p_jdb + ofs);
+ 				ofs += sizeof(struct ext3_journal_block_tag);
+ 				if (ofs > fs->blksz)
+ 					break;
+-- 
+2.17.1
+

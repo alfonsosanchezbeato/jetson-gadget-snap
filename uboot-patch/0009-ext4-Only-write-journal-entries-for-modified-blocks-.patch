@@ -1,0 +1,71 @@
+From 6c1d2e11933bd0b760c278fb0245e6580d68ffac Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Stefan=20Br=C3=BCns?= <stefan.bruens@rwth-aachen.de>
+Date: Sun, 9 Oct 2016 20:15:28 +0200
+Subject: [PATCH 09/15] ext4: Only write journal entries for modified blocks in
+ unlink_filename
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Instead of creating a journal entry for each directory block, even
+if the block is unmodified, only log the modified block.
+
+Signed-off-by: Stefan Brüns <stefan.bruens@rwth-aachen.de>
+Reviewed-by: Tom Rini <trini@konsulko.com>
+Reviewed-by: Lukasz Majewski <l.majewski@samsung.com>
+---
+ fs/ext4/ext4_common.c | 23 +++++++++++++----------
+ 1 file changed, 13 insertions(+), 10 deletions(-)
+
+diff --git a/fs/ext4/ext4_common.c b/fs/ext4/ext4_common.c
+index 0c11ddb1b5..4248ac1dcf 100644
+--- a/fs/ext4/ext4_common.c
++++ b/fs/ext4/ext4_common.c
+@@ -874,8 +874,6 @@ static int unlink_filename(char *filename, unsigned int blknr)
+ 	if (status == 0)
+ 		goto fail;
+ 
+-	if (ext4fs_log_journal(block_buffer, blknr))
+-		goto fail;
+ 	offset = 0;
+ 	do {
+ 		previous_dir = dir;
+@@ -889,14 +887,6 @@ static int unlink_filename(char *filename, unsigned int blknr)
+ 		if (dir->inode && (strlen(filename) == dir->namelen) &&
+ 		    (strncmp(direntname, filename, dir->namelen) == 0)) {
+ 			inodeno = le32_to_cpu(dir->inode);
+-			if (previous_dir) {
+-				uint16_t new_len;
+-				new_len = le16_to_cpu(previous_dir->direntlen);
+-				new_len += le16_to_cpu(dir->direntlen);
+-				previous_dir->direntlen = cpu_to_le16(new_len);
+-			} else {
+-				dir->inode = 0;
+-			}
+ 			break;
+ 		}
+ 
+@@ -905,7 +895,20 @@ static int unlink_filename(char *filename, unsigned int blknr)
+ 	} while (offset < fs->blksz);
+ 
+ 	if (inodeno > 0) {
++		printf("file found, deleting\n");
++		if (ext4fs_log_journal(block_buffer, blknr))
++			goto fail;
+ 
++		if (previous_dir) {
++			/* merge dir entry with predecessor */
++			uint16_t new_len;
++			new_len = le16_to_cpu(previous_dir->direntlen);
++			new_len += le16_to_cpu(dir->direntlen);
++			previous_dir->direntlen = cpu_to_le16(new_len);
++		} else {
++			/* invalidate dir entry */
++			dir->inode = 0;
++		}
+ 		if (ext4fs_put_metadata(block_buffer, blknr))
+ 			goto fail;
+ 		ret = inodeno;
+-- 
+2.17.1
+

@@ -1,0 +1,83 @@
+From 28dca60473ae002c7ccd1dc1084c7f58dfb7987a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Stefan=20Br=C3=BCns?= <stefan.bruens@rwth-aachen.de>
+Date: Sat, 5 Nov 2016 22:17:14 +0100
+Subject: [PATCH 10/15] ext4: Fix handling of sparse files
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+A sparse file may have regions not mapped by any extents, at the start
+or at the end of the file, or anywhere between, thus not finding a
+matching extent region is never an error.
+
+Found by python filesystem tests.
+
+Signed-off-by: Stefan Brüns <stefan.bruens@rwth-aachen.de>
+---
+ fs/ext4/ext4_common.c | 31 +++++++++++++++----------------
+ 1 file changed, 15 insertions(+), 16 deletions(-)
+
+diff --git a/fs/ext4/ext4_common.c b/fs/ext4/ext4_common.c
+index 4248ac1dcf..bfebe7e379 100644
+--- a/fs/ext4/ext4_common.c
++++ b/fs/ext4/ext4_common.c
+@@ -1617,12 +1617,13 @@ long int read_allocated_block(struct ext2_inode *inode, int fileblock)
+ 		- get_fs()->dev_desc->log2blksz;
+ 
+ 	if (le32_to_cpu(inode->flags) & EXT4_EXTENTS_FL) {
++		long int startblock, endblock;
+ 		char *buf = zalloc(blksz);
+ 		if (!buf)
+ 			return -ENOMEM;
+ 		struct ext4_extent_header *ext_block;
+ 		struct ext4_extent *extent;
+-		int i = -1;
++		int i;
+ 		ext_block =
+ 			ext4fs_get_extent_block(ext4fs_root, buf,
+ 						(struct ext4_extent_header *)
+@@ -1636,28 +1637,26 @@ long int read_allocated_block(struct ext2_inode *inode, int fileblock)
+ 
+ 		extent = (struct ext4_extent *)(ext_block + 1);
+ 
+-		do {
+-			i++;
+-			if (i >= le16_to_cpu(ext_block->eh_entries))
+-				break;
+-		} while (fileblock >= le32_to_cpu(extent[i].ee_block));
+-		if (--i >= 0) {
+-			fileblock -= le32_to_cpu(extent[i].ee_block);
+-			if (fileblock >= le16_to_cpu(extent[i].ee_len)) {
++		for (i = 0; i < le16_to_cpu(ext_block->eh_entries); i++) {
++			startblock = le32_to_cpu(extent[i].ee_block);
++			endblock = startblock + le16_to_cpu(extent[i].ee_len);
++
++			if (startblock > fileblock) {
++				/* Sparse file */
+ 				free(buf);
+ 				return 0;
+-			}
+ 
+-			start = le16_to_cpu(extent[i].ee_start_hi);
+-			start = (start << 32) +
++			} else if (fileblock < endblock) {
++				start = le16_to_cpu(extent[i].ee_start_hi);
++				start = (start << 32) +
+ 					le32_to_cpu(extent[i].ee_start_lo);
+-			free(buf);
+-			return fileblock + start;
++				free(buf);
++				return (fileblock - startblock) + start;
++			}
+ 		}
+ 
+-		printf("Extent Error\n");
+ 		free(buf);
+-		return -1;
++		return 0;
+ 	}
+ 
+ 	/* Direct blocks. */
+-- 
+2.17.1
+

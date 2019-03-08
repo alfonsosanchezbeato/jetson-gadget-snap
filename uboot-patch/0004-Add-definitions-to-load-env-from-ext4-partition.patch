@@ -1,0 +1,64 @@
+From 52cb1ee50d56d1c8b8b1ec12661485ceb06069bc Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Tue, 5 Mar 2019 17:25:06 +0100
+Subject: [PATCH 04/15] Add definitions to load env from ext4 partition
+
+---
+ include/configs/p2371-2180.h   | 6 ------
+ include/configs/p2771-0000.h   | 6 ------
+ include/configs/tegra-common.h | 4 ++++
+ 3 files changed, 4 insertions(+), 12 deletions(-)
+
+diff --git a/include/configs/p2371-2180.h b/include/configs/p2371-2180.h
+index c45d5fbc01..535518bc0d 100644
+--- a/include/configs/p2371-2180.h
++++ b/include/configs/p2371-2180.h
+@@ -27,12 +27,6 @@
+ #define CONFIG_GENERIC_MMC
+ #define CONFIG_TEGRA_MMC
+ 
+-/* Environment in eMMC, at the end of 2nd "boot sector" */
+-#define CONFIG_ENV_IS_IN_MMC
+-#define CONFIG_SYS_MMC_ENV_DEV		0
+-#define CONFIG_SYS_MMC_ENV_PART		2
+-#define CONFIG_ENV_OFFSET		(-CONFIG_ENV_SIZE)
+-
+ /* SPI */
+ #define CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
+ #define CONFIG_SF_DEFAULT_SPEED		24000000
+diff --git a/include/configs/p2771-0000.h b/include/configs/p2771-0000.h
+index 1c8981b16f..3a82dea6b4 100644
+--- a/include/configs/p2771-0000.h
++++ b/include/configs/p2771-0000.h
+@@ -22,12 +22,6 @@
+ #define CONFIG_GENERIC_MMC
+ #define CONFIG_TEGRA_MMC
+ 
+-/* Environment in eMMC, at the end of 2nd "boot sector" */
+-#define CONFIG_ENV_IS_IN_MMC
+-#define CONFIG_SYS_MMC_ENV_DEV		0
+-#define CONFIG_SYS_MMC_ENV_PART		2
+-#define CONFIG_ENV_OFFSET		(-CONFIG_ENV_SIZE)
+-
+ /* PCI host support */
+ #define CONFIG_PCI
+ #define CONFIG_PCI_PNP
+diff --git a/include/configs/tegra-common.h b/include/configs/tegra-common.h
+index 8fa57c6aeb..cbf2393651 100644
+--- a/include/configs/tegra-common.h
++++ b/include/configs/tegra-common.h
+@@ -37,6 +37,10 @@
+ #define CONFIG_ENV_SIZE				(128 * 1024)
+ #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
+ #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
++#define CONFIG_ENV_IS_IN_EXT4
++#define EXT4_ENV_INTERFACE "mmc"
++#define EXT4_ENV_DEVICE_AND_PART "0:1"
++#define EXT4_ENV_FILE "uboot.env"
+ 
+ /*
+  * NS16550 Configuration
+-- 
+2.17.1
+

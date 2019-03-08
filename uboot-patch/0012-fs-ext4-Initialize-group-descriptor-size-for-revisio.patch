@@ -1,0 +1,36 @@
+From c99e5df8f17f5ca966314cdca9808adf992c0263 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Stefan=20Br=C3=BCns?= <stefan.bruens@rwth-aachen.de>
+Date: Tue, 27 Dec 2016 02:35:08 +0100
+Subject: [PATCH 12/15] fs/ext4: Initialize group descriptor size for revision
+ level 0 filesystems
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+genext2fs creates revision level 0 filesystems, which are not readable
+by u-boot due to the initialized group descriptor size field.
+f798b1dda1c5de818b806189e523d1b75db7e72d
+
+Reported-by: Kever Yang <kever.yang@rock-chips.com>
+Reported-by: FrostyBytes@protonmail.com
+Signed-off-by: Stefan Brüns <stefan.bruens@rwth-aachen.de>
+Tested-by: Kever Yang <kever.yang@rock-chips.com>
+---
+ fs/ext4/ext4_common.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/ext4/ext4_common.c b/fs/ext4/ext4_common.c
+index bfebe7e379..621c61e5c7 100644
+--- a/fs/ext4/ext4_common.c
++++ b/fs/ext4/ext4_common.c
+@@ -2334,6 +2334,7 @@ int ext4fs_mount(unsigned part_length)
+ 
+ 	if (le32_to_cpu(data->sblock.revision_level) == 0) {
+ 		fs->inodesz = 128;
++		fs->gdsize = 32;
+ 	} else {
+ 		debug("EXT4 features COMPAT: %08x INCOMPAT: %08x RO_COMPAT: %08x\n",
+ 		      __le32_to_cpu(data->sblock.feature_compatibility),
+-- 
+2.17.1
+

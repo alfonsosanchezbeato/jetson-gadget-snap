@@ -1,0 +1,25 @@
+From a430bd68dbd33046f0cf184af2a2d1dff4791c1f Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Tue, 5 Mar 2019 17:25:27 +0100
+Subject: [PATCH 05/15] Print trace indicating when we are reading the env
+
+---
+ common/env_ext4.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/common/env_ext4.c b/common/env_ext4.c
+index adefa7dc99..8e87280d7b 100644
+--- a/common/env_ext4.c
++++ b/common/env_ext4.c
+@@ -112,6 +112,7 @@ void env_relocate_spec(void)
+ 		goto err_env_relocate;
+ 	}
+ 
++	printf("Reading %s (%d bytes)\n", EXT4_ENV_FILE, CONFIG_ENV_SIZE);
+ 	err = ext4_read_file(EXT4_ENV_FILE, buf, 0, CONFIG_ENV_SIZE, &off);
+ 	ext4fs_close();
+ 
+-- 
+2.17.1
+

@@ -1,0 +1,28 @@
+From 1f4c227ec93047c13169ae9342ad6e08544dbde1 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Tue, 5 Mar 2019 11:36:24 +0100
+Subject: [PATCH 01/15] Change env options for tx*
+
+---
+ include/configs/tegra-common.h | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/tegra-common.h b/include/configs/tegra-common.h
+index d1dac52f7c..8fa57c6aeb 100644
+--- a/include/configs/tegra-common.h
++++ b/include/configs/tegra-common.h
+@@ -34,7 +34,9 @@
+ 
+ /* Environment */
+ #define CONFIG_ENV_VARS_UBOOT_CONFIG
+-#define CONFIG_ENV_SIZE			0x2000	/* Total Size Environment */
++#define CONFIG_ENV_SIZE				(128 * 1024)
++#define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
++#define CONFIG_SYS_REDUNDAND_ENVIRONMENT
+ 
+ /*
+  * NS16550 Configuration
+-- 
+2.17.1
+

@@ -1,0 +1,37 @@
+From 4ea520dab642aa253782d1d06997a91efd203b9a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Tue, 5 Mar 2019 11:37:25 +0100
+Subject: [PATCH 03/15] Add options to support UC in tx2
+
+---
+ configs/p2771-0000-500_defconfig | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/configs/p2771-0000-500_defconfig b/configs/p2771-0000-500_defconfig
+index eed077d34b..663a45234d 100644
+--- a/configs/p2771-0000-500_defconfig
++++ b/configs/p2771-0000-500_defconfig
+@@ -16,7 +16,6 @@ CONFIG_CMD_I2C=y
+ CONFIG_CMD_USB=y
+ # CONFIG_CMD_FPGA is not set
+ CONFIG_CMD_GPIO=y
+-# CONFIG_CMD_SETEXPR is not set
+ CONFIG_CMD_DHCP=y
+ # CONFIG_CMD_NFS is not set
+ CONFIG_CMD_MII=y
+@@ -36,3 +35,11 @@ CONFIG_USB=y
+ CONFIG_DM_USB=y
+ CONFIG_POWER_DOMAIN=y
+ CONFIG_TEGRA186_POWER_DOMAIN=y
++CONFIG_ENV_IS_IN_EXT4=y
++CONFIG_ENV_EXT4_INTERFACE="mmc"
++CONFIG_ENV_EXT4_DEVICE_AND_PART="0:5"
++CONFIG_ENV_EXT4_FILE="/uboot.env"
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_CMD_SETEXPR=y
++CONFIG_ENV_VARS_UBOOT_CONFIG=y
++CONFIG_CMD_SAVEENV=y
+-- 
+2.17.1
+

@@ -1,0 +1,27 @@
+From 6c628be92dd48794dd0aa46c41bbf282c6b5d023 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Thu, 7 Mar 2019 11:52:37 +0100
+Subject: [PATCH 06/15] Use absolute path for env file
+
+Otherwise saveenv will refuse to work.
+---
+ include/configs/tegra-common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/configs/tegra-common.h b/include/configs/tegra-common.h
+index cbf2393651..f5b3bbcf46 100644
+--- a/include/configs/tegra-common.h
++++ b/include/configs/tegra-common.h
+@@ -40,7 +40,7 @@
+ #define CONFIG_ENV_IS_IN_EXT4
+ #define EXT4_ENV_INTERFACE "mmc"
+ #define EXT4_ENV_DEVICE_AND_PART "0:1"
+-#define EXT4_ENV_FILE "uboot.env"
++#define EXT4_ENV_FILE "/uboot.env"
+ 
+ /*
+  * NS16550 Configuration
+-- 
+2.17.1
+

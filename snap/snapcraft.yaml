@@ -12,6 +12,21 @@ confinement: strict
 grade: stable
 
 parts:
+  uboot:
+    plugin: nil
+    source: git://nv-tegra.nvidia.com/3rdparty/u-boot.git
+    source-type: git
+    source-tag: tegra-l4t-r28.2
+    override-pull: |
+      snapcraftctl pull
+      # Apply UC patches + bug fixes
+      git am ../../../uboot-patch/*.patch
+    override-build: |
+      export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+      make p2371-2180_defconfig
+      nice make -j$(nproc)
+      cp "$SNAPCRAFT_PART_BUILD"/u-boot.bin "$SNAPCRAFT_PART_INSTALL"/
+
   uboot-env:
     plugin: nil
     source: uboot-env

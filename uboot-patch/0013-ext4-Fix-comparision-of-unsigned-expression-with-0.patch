@@ -1,0 +1,59 @@
+From 56a1446b5cec2ac2f35377ae6c82238dee39ef33 Mon Sep 17 00:00:00 2001
+From: Lokesh Vutla <lokeshvutla@ti.com>
+Date: Wed, 26 Apr 2017 16:58:22 +0530
+Subject: [PATCH 13/15] ext4: Fix comparision of unsigned expression with < 0
+
+In file ext4fs.c funtion ext4fs_read_file() compares an
+unsigned expression with < 0 like below
+
+	lbaint_t blknr;
+	blknr = read_allocated_block(&(node->inode), i);
+	if (blknr < 0)
+		return -1;
+
+blknr is of type ulong/uint64_t. read_allocated_block() returns
+long int. So comparing blknr with < 0 will always be false. Instead
+declare blknr as long int.
+
+Similarly ext4/dev.c does a similar comparison. Drop the redundant
+comparison.
+
+Signed-off-by: Lokesh Vutla <lokeshvutla@ti.com>
+Reviewed-by: Tom Rini <trini@konsulko.com>
+---
+ fs/ext4/dev.c    | 5 ++---
+ fs/ext4/ext4fs.c | 2 +-
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/fs/ext4/dev.c b/fs/ext4/dev.c
+index ee84d3fbe1..ae2ba6a901 100644
+--- a/fs/ext4/dev.c
++++ b/fs/ext4/dev.c
+@@ -60,9 +60,8 @@ int ext4fs_devread(lbaint_t sector, int byte_offset, int byte_len, char *buf)
+ 	}
+ 
+ 	/* Check partition boundaries */
+-	if ((sector < 0) ||
+-	    ((sector + ((byte_offset + byte_len - 1) >> log2blksz))
+-	     >= part_info->size)) {
++	if ((sector + ((byte_offset + byte_len - 1) >> log2blksz))
++	    >= part_info->size) {
+ 		printf("%s read outside partition " LBAFU "\n", __func__,
+ 		       sector);
+ 		return 0;
+diff --git a/fs/ext4/ext4fs.c b/fs/ext4/ext4fs.c
+index 7187dcfb05..081509dbb4 100644
+--- a/fs/ext4/ext4fs.c
++++ b/fs/ext4/ext4fs.c
+@@ -71,7 +71,7 @@ int ext4fs_read_file(struct ext2fs_node *node, loff_t pos,
+ 	blockcnt = lldiv(((len + pos) + blocksize - 1), blocksize);
+ 
+ 	for (i = lldiv(pos, blocksize); i < blockcnt; i++) {
+-		lbaint_t blknr;
++		long int blknr;
+ 		int blockoff = pos - (blocksize * i);
+ 		int blockend = blocksize;
+ 		int skipfirst = 0;
+-- 
+2.17.1
+
