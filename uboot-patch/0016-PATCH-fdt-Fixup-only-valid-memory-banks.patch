@@ -1,0 +1,48 @@
+From b8a8a08b44539c2588abc338efef6b48f83f8843 Mon Sep 17 00:00:00 2001
+From: Thierry Reding <treding@nvidia.com>
+Date: Thu, 28 Mar 2019 08:53:49 +0100
+Subject: [PATCH] [PATCH] fdt: Fixup only valid memory banks
+
+Memory banks with address 0 and size 0 are empty and should not be
+passed to the OS via device tree.
+
+Upstream commit: ed5af03f9bb8905f1e94d68ab49f22d7f061d75f
+
+This fixes u-boot stopping because the dtb file was too small to
+acommodate the new size (16416 bytes) for /memory/reg. This does not
+happen in the nvidia images as they use a dtb in a partition and they
+can use all the space there.
+---
+ common/fdt_support.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/common/fdt_support.c b/common/fdt_support.c
+index 202058621a..8a966fa4aa 100644
+--- a/common/fdt_support.c
++++ b/common/fdt_support.c
+@@ -417,7 +417,7 @@ static int fdt_pack_reg(const void *fdt, void *buf, u64 *address, u64 *size,
+ int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
+ {
+ 	int err, nodeoffset;
+-	int len;
++	int len, i;
+ 	u8 tmp[MEMORY_BANKS_MAX * 16]; /* Up to 64-bit address + 64-bit size */
+ 
+ 	if (banks > MEMORY_BANKS_MAX) {
+@@ -446,6 +446,13 @@ int fdt_fixup_memory_banks(void *blob, u64 start[], u64 size[], int banks)
+ 		return err;
+ 	}
+ 
++	for (i = 0; i < banks; i++) {
++		if (start[i] == 0 && size[i] == 0)
++			break;
++	}
++
++	banks = i;
++
+ 	if (!banks)
+ 		return 0;
+ 
+-- 
+2.17.1
+
