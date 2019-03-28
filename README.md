@@ -10,7 +10,8 @@ install snapcraft:
 
 `snap install snapcraft`
 
-Then, to build the snap, if in the target machine:
+Then, go to `tx1` or `tx2` folder depending on your device. If in the
+target machine, build the snap with this command:
 
 `SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft`
 
