@@ -20,7 +20,7 @@ parts:
     override-pull: |
       snapcraftctl pull
       # Apply UC patches + bug fixes
-      git am ../../../uboot-patch/*.patch
+      git am ../../../../uboot-patch/*.patch
     override-build: |
       export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
       make p2371-2180_defconfig
@@ -29,9 +29,9 @@ parts:
 
   uboot-env:
     plugin: nil
-    source: uboot-env
+    source: ../uboot-env
     override-build: |
-      mkenvimage -r -s 131072 -o uboot.env uboot.env.in
+      mkenvimage -r -s 131072 -o uboot.env uboot-tx1.env.in
       cp "$SNAPCRAFT_PART_BUILD"/uboot.env "$SNAPCRAFT_PART_INSTALL"/
       # Link needed for ubuntu-image to work properly
       cd "$SNAPCRAFT_PART_INSTALL"/; ln -s uboot.env uboot.conf
