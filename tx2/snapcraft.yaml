@@ -1,0 +1,42 @@
+name: jetson-tx2
+version: '1'
+summary: jetson-tx2 gadget
+base: core18
+description: |
+ Bootloader files and partitoning data to create a
+ bootable Ubuntu Core image for the jetson TX2 device
+type: gadget
+architectures:
+  - arm64
+confinement: strict
+grade: stable
+
+parts:
+  uboot:
+    plugin: nil
+    source: git://nv-tegra.nvidia.com/3rdparty/u-boot.git
+    source-type: git
+    source-tag: tegra-l4t-r32.1
+    override-pull: |
+      snapcraftctl pull
+      # This commit conflicts with some of the ext4 fixes. It is a
+      # performance improvement, so it is not strictly necessary.
+      git revert 059ace6e05df0bd6842946327119ac0750766580
+      # Apply UC patches + bug fixes
+      git am ../../../../uboot-patch/*.patch
+    override-build: |
+      export ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
+      make p2771-0000-500_defconfig
+      nice make -j$(nproc)
+      cp "$SNAPCRAFT_PART_BUILD"/u-boot.bin "$SNAPCRAFT_PART_INSTALL"/
+
+  uboot-env:
+    plugin: nil
+    source: ../uboot-env
+    override-build: |
+      mkenvimage -r -s 131072 -o uboot.env uboot-tx2.env.in
+      cp "$SNAPCRAFT_PART_BUILD"/uboot.env "$SNAPCRAFT_PART_INSTALL"/
+      # Link needed for ubuntu-image to work properly
+      cd "$SNAPCRAFT_PART_INSTALL"/; ln -s uboot.env uboot.conf
+    build-packages:
+      - u-boot-tools
