@@ -1,0 +1,50 @@
+From 1d65bbef293976eb9247ded0fe8f170dda43790a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Tue, 9 Apr 2019 10:17:44 +0200
+Subject: [PATCH 1/2] nano: add options to support UC
+
+---
+ configs/p3450-porg_defconfig   | 9 ++++++++-
+ include/configs/tegra-common.h | 4 ++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
+diff --git a/configs/p3450-porg_defconfig b/configs/p3450-porg_defconfig
+index 31893dfedf..8487658ba8 100644
+--- a/configs/p3450-porg_defconfig
++++ b/configs/p3450-porg_defconfig
+@@ -18,7 +18,14 @@ CONFIG_CMD_DFU=y
+ CONFIG_CMD_USB_MASS_STORAGE=y
+ # CONFIG_CMD_FPGA is not set
+ CONFIG_CMD_GPIO=y
+-# CONFIG_CMD_SETEXPR is not set
++CONFIG_ENV_IS_IN_EXT4=y
++CONFIG_ENV_EXT4_INTERFACE="mmc"
++CONFIG_ENV_EXT4_DEVICE_AND_PART="1:1"
++CONFIG_ENV_EXT4_FILE="/uboot.env"
++CONFIG_SUPPORT_RAW_INITRD=y
++CONFIG_CMD_SETEXPR=y
++CONFIG_ENV_VARS_UBOOT_CONFIG=y
++CONFIG_CMD_SAVEENV=y
+ CONFIG_CMD_DHCP=y
+ # CONFIG_CMD_NFS is not set
+ CONFIG_CMD_MII=y
+diff --git a/include/configs/tegra-common.h b/include/configs/tegra-common.h
+index 29e6185f79..34661c98eb 100644
+--- a/include/configs/tegra-common.h
++++ b/include/configs/tegra-common.h
+@@ -39,7 +39,11 @@
+ #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
+ #define CONFIG_ENV_IS_IN_EXT4
+ #define EXT4_ENV_INTERFACE "mmc"
++#ifdef CONFIG_TARGET_P3450_PORG
++#define EXT4_ENV_DEVICE_AND_PART "1:1"
++#else
+ #define EXT4_ENV_DEVICE_AND_PART "0:1"
++#endif
+ #define EXT4_ENV_FILE "/uboot.env"
+ 
+ /*
+-- 
+2.17.1
+

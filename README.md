@@ -1,7 +1,7 @@
 # jetson-gadget snap
 
 This repository contains the building recipe for a gadget snap for the
-Jetson TX1/TX2 devices.
+Jetson TX1/TX2/Nano devices.
 
 ## Build instructions
 
@@ -10,8 +10,8 @@ install snapcraft:
 
 `snap install snapcraft`
 
-Then, go to `tx1` or `tx2` folder depending on your device. If in the
-target machine, build the snap with this command:
+Then, go to `tx1`, `tx2`, or `nano` folder depending on your device. If
+in the target machine, build the snap with this command:
 
 `SNAPCRAFT_BUILD_ENVIRONMENT=host snapcraft`
 

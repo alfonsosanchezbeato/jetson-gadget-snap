@@ -1,0 +1,28 @@
+From 88e519b660bf610537fb5c76ea993a0dffba2e28 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Tue, 9 Apr 2019 10:18:03 +0200
+Subject: [PATCH 2/2] nano: disable CONFIG_ENV_IS_NOWHERE
+
+We use CONFIG_ENV_IS_IN_EXT4, which caused a conflict when compiling.
+---
+ include/configs/p3450-porg.h | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/include/configs/p3450-porg.h b/include/configs/p3450-porg.h
+index 69c5106241..c4fc190c80 100644
+--- a/include/configs/p3450-porg.h
++++ b/include/configs/p3450-porg.h
+@@ -32,7 +32,8 @@
+ 	func(MMC, mmc, 1)
+ 
+ /* Environment s/b at end of SPI, fix it later */
+-#define CONFIG_ENV_IS_NOWHERE
++/* Conflicts with CONFIG_ENV_IS_IN_EXT4 */
++/*#define CONFIG_ENV_IS_NOWHERE*/
+ 
+ /* SPI */
+ #define CONFIG_SF_DEFAULT_MODE		SPI_MODE_0
+-- 
+2.17.1
+
