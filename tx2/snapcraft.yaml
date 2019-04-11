@@ -19,8 +19,8 @@ parts:
     source-tag: tegra-l4t-r32.1
     override-pull: |
       snapcraftctl pull
-      # This commit conflicts with some of the ext4 fixes. It is a
-      # performance improvement, so it is not strictly necessary.
+      # This commit conflicts with some of the ext4 fixes. We include
+      # it rebased as part of our u-boot patches.
       git revert 059ace6e05df0bd6842946327119ac0750766580
       # Apply UC patches + bug fixes
       git am ../../../../uboot-patch/*.patch
