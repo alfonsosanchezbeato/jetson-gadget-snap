@@ -1,0 +1,77 @@
+From 97b9a2b19feedb25c24920c6c71a66589229347a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Fri, 12 Apr 2019 10:18:09 +0200
+Subject: [PATCH] UBUNTU: remove kernel options we do not want
+
+The cbootargs env var contains kernel command line options that we use
+in our u-boot script, but we need to remove some options that are not
+wanted for Ubuntu Core.
+---
+ arch/arm/mach-tegra/cboot_board.c | 31 ++++++++++++++++++++++++++++---
+ 1 file changed, 28 insertions(+), 3 deletions(-)
+
+diff --git a/arch/arm/mach-tegra/cboot_board.c b/arch/arm/mach-tegra/cboot_board.c
+index db1406dbdf..609a2e06ad 100644
+--- a/arch/arm/mach-tegra/cboot_board.c
++++ b/arch/arm/mach-tegra/cboot_board.c
+@@ -341,11 +341,26 @@ static int set_ethaddr_from_cboot(void)
+ }
+ #endif	/* T186 */
+ 
++static int is_forbidden_option(const char *option)
++{
++	const char *forb_vals[] = { "console=tty0", "root=", "rw" };
++	int i, num_forb_v;
++
++	num_forb_v = sizeof(forb_vals)/sizeof(forb_vals[0]);
++	for (i = 0; i < num_forb_v; ++i) {
++		int val_sz = strlen(forb_vals[i]);
++		if (strncmp(option, forb_vals[i], val_sz) == 0)
++			return 1;
++	}
++
++	return 0;
++}
++
+ static int set_cbootargs(void)
+ {
+ 	const void *cboot_blob = (void *)cboot_boot_x0;
+ 	const void *prop;
+-	char *bargs, *s;
++	char *bargs, *s, *tok, *ptok;
+ 	int node, len, ret = 0;
+ 
+ 	/*
+@@ -369,9 +384,18 @@ static int set_cbootargs(void)
+ 	}
+ 	debug("%s: found 'bootargs' property, len =%d\n",  __func__, len);
+ 
+-	/* CBoot seems to add trailing whitespace - strip it here */
++	/* Remove options we do not want in Ubuntu Core */
+ 	s = strdup((char *)prop);
+-	bargs = strstrip(s);
++	bargs = malloc(strlen(s) + 1);
++	ptok = bargs;
++	for (tok = strtok(s, " "); tok != NULL; tok = strtok(NULL, " ")) {
++		if (is_forbidden_option(tok))
++			continue;
++		strcpy(ptok, tok);
++		ptok += strlen(tok);
++		*ptok++ = ' ';
++	}
++	*ptok = '\0';
+ 	debug("%s: bootargs = %s!\n", __func__, bargs);
+ 
+         /* Set cbootargs to env for later use by extlinux files */
+@@ -379,6 +403,7 @@ static int set_cbootargs(void)
+ 	if (ret)
+ 		printf("Failed to set cbootargs from cboot DTB: %d\n", ret);
+ 
++	free(bargs);
+ 	free(s);
+ 	return ret;
+ }
+-- 
+2.17.1
+
