@@ -9,7 +9,7 @@ volumes:
         filesystem: ext4
         filesystem-label: system-boot
         offset: 17408
-        size: 67108864
+        size: 268435456
       - name: TBC
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 2097152
