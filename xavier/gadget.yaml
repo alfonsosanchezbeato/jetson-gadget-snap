@@ -1,0 +1,117 @@
+volumes:
+  jetson:
+    bootloader: u-boot
+    schema: gpt
+    structure:
+      - name: snapbootsel
+        role: system-boot
+        type: 0FC63DAF-8483-4772-8E79-3D69D8477DE4
+        filesystem: ext4
+        filesystem-label: snapbootsel
+        offset: 20480
+        size: 10485760
+      - name: mts-mce
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 512000
+      - name: mts-mce_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 512000
+      - name: mts-proper
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: mts-proper_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: cpu-bootloader
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: cpu-bootloader_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: bootloader-dtb
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 393216
+      - name: bootloader-dtb_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 393216
+      - name: secure-os
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: secure-os_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 2097152
+      - name: eks
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 131072
+      - name: eks_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 131072
+      - name: bpmp-fw
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 1048576
+      - name: bpmp-fw_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 1048576
+      - name: bpmp-fw-dtb
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 1048576
+      - name: bpmp-fw-dtb_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 1048576
+      - name: xusb-fw
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 262144
+      - name: xusb-fw_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 262144
+      - name: rce-fw
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: rce-fw_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: adsp-fw
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: adsp-fw_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 4194304
+      - name: sce-fw
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: sce-fw_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: sc7
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 6291456
+      - name: sc7_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 6291456
+      - name: BMP
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 134217728
+      - name: BMP_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 134217728
+      - name: kernel
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 67108864
+      - name: kernel_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 67108864
+      - name: kernel-dtb
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: kernel-dtb_b
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 524288
+      - name: CPUBL-CFG
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 1048576
+      - name: RP1
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 8388608
+      - name: RP2
+        type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
+        size: 8388608

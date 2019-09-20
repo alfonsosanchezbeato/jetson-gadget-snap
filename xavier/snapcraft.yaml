@@ -1,0 +1,17 @@
+name: jetson-xavier
+version: '1'
+summary: jetson-xavier gadget
+base: core18
+description: |
+ Bootloader files and partitoning data to create a
+ bootable Ubuntu Core image for the jetson XAVIER device
+type: gadget
+architectures:
+  - arm64
+confinement: strict
+grade: stable
+
+parts:
+  # TODO Build patched cboot
+  cboot:
+    plugin: nil

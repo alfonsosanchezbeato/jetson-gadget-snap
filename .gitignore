@@ -10,3 +10,7 @@
 /nano/prime/
 /nano/stage/
 /nano/jetson-nano_*_arm64.snap
+/xavier/parts/
+/xavier/prime/
+/xavier/stage/
+/xavier/jetson-xavier_*_arm64.snap
