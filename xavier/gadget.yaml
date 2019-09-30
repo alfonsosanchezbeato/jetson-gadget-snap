@@ -25,9 +25,13 @@ volumes:
       - name: cpu-bootloader
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 524288
+        content:
+          - image: cboot_t194.bin
       - name: cpu-bootloader_b
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 524288
+        content:
+          - image: cboot_t194.bin
       - name: bootloader-dtb
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 393216
@@ -98,10 +102,14 @@ volumes:
         role: bootimg
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 67108864
+        content:
+          - image: boot.img
       - name: kernel_b
         role: bootimg
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 67108864
+        content:
+          - image: boot.img
       - name: kernel-dtb
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 524288
