@@ -1,0 +1,28 @@
+From add1ff26f424c9650c945cbb7e2100fdc7f97acf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Thu, 19 Sep 2019 18:22:39 +0200
+Subject: [PATCH 1/6] Disable compiler protections features
+
+Ubuntu enables stack protection and FORTIFY source by default which
+breaks the build. Adding -fno-stack-protector and -U_FORTIFY_SOURCE
+to the tool flags fixes this without any side effects.
+---
+ bootloader/partner/t18x/cboot/engine.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/bootloader/partner/t18x/cboot/engine.mk b/bootloader/partner/t18x/cboot/engine.mk
+index 34a61cd..772215e 100644
+--- a/bootloader/partner/t18x/cboot/engine.mk
++++ b/bootloader/partner/t18x/cboot/engine.mk
+@@ -62,6 +62,7 @@ GLOBAL_CFLAGS += -Werror=volatile-register-var -Werror=unused-variable -Werror=u
+ GLOBAL_CFLAGS += -Werror=type-limits -Werror=format-extra-args -Werror=unused-but-set-variable -Werror=overflow
+ GLOBAL_CFLAGS += -Werror=uninitialized -Werror=parentheses
+ GLOBAL_CFLAGS += -Wextra
++GLOBAL_CFLAGS += -fno-stack-protector -U_FORTIFY_SOURCE
+ 
+ # Treat all compilation warnings as errors
+ GLOBAL_CFLAGS += -Werror
+-- 
+2.17.1
+

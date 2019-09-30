@@ -1,0 +1,123 @@
+From 38588b604e0d83362036bbd2f31299fb0de1cecb Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Fri, 27 Sep 2019 17:46:12 +0200
+Subject: [PATCH 6/6] snap: add support for ubuntu core A/B booting
+
+---
+ .../partner/common/include/lib/linux_load.h       |  3 +++
+ bootloader/partner/common/lib/linuxboot/cmdline.c | 10 ++++++++++
+ .../partner/common/lib/linuxboot/linux_load.c     |  7 +++++++
+ .../partitionloader/tegrabl_partition_loader.c    | 15 +++++++++++++++
+ 4 files changed, 35 insertions(+)
+
+diff --git a/bootloader/partner/common/include/lib/linux_load.h b/bootloader/partner/common/include/lib/linux_load.h
+index c056520..9694625 100644
+--- a/bootloader/partner/common/include/lib/linux_load.h
++++ b/bootloader/partner/common/include/lib/linux_load.h
+@@ -27,6 +27,9 @@ struct tegrabl_kernel_load_callbacks {
+ 								   void *);
+ };
+ 
++extern const char *snap_bootpart;
++extern const char *snap_cmdline;
++
+ /**
+  * @brief Load Android boot image from storage, and extract kernel/ramdisk/DTB
+  * from the same
+diff --git a/bootloader/partner/common/lib/linuxboot/cmdline.c b/bootloader/partner/common/lib/linuxboot/cmdline.c
+index 6558b94..41baa67 100644
+--- a/bootloader/partner/common/lib/linuxboot/cmdline.c
++++ b/bootloader/partner/common/lib/linuxboot/cmdline.c
+@@ -25,6 +25,7 @@
+ #if defined(CONFIG_ENABLE_DISPLAY)
+ #include <tegrabl_display.h>
+ #endif
++#include <linux_load.h>
+ 
+ #define TOSTR(s)       #s
+ #define STRINGIFY(s)   TOSTR(s)
+@@ -523,6 +524,15 @@ char *tegrabl_linuxboot_prepare_cmdline(char *initcmdline)
+ 		}
+ 		pr_debug("Cmdline: %s\n", s_cmdline);
+ 	}
++
++	if (snap_cmdline) {
++		idx = tegrabl_snprintf(ptr, remain, "%s %s ", ptr, snap_cmdline);
++		if (idx > 0 && idx <= remain) {
++			remain -= idx;
++			ptr += idx;
++		}
++	}
++
+ 	pr_info("Linux Cmdline: %s\n", s_cmdline);
+ 
+ 	return s_cmdline;
+diff --git a/bootloader/partner/common/lib/linuxboot/linux_load.c b/bootloader/partner/common/lib/linuxboot/linux_load.c
+index c1315e7..1ed784d 100644
+--- a/bootloader/partner/common/lib/linuxboot/linux_load.c
++++ b/bootloader/partner/common/lib/linuxboot/linux_load.c
+@@ -40,6 +40,7 @@
+ #if defined(CONFIG_OS_IS_L4T)
+ #include <tegrabl_auth.h>
+ #endif
++#include <snappy_boot.h>
+ 
+ #if defined(CONFIG_ENABLE_BOOT_DEVICE_SELECT)
+ #include <config_storage.h>
+@@ -69,6 +70,9 @@ static struct conf extlinux_conf;
+ static uint32_t boot_entry;
+ #endif
+ 
++const char *snap_bootpart;
++const char *snap_cmdline;
++
+ void tegrabl_get_ramdisk_info(uint64_t *start, uint64_t *size)
+ {
+ 	if (start) {
+@@ -562,6 +566,9 @@ tegrabl_error_t tegrabl_load_kernel_and_dtb(struct tegrabl_kernel_bin *kernel,
+ 		goto fail;
+ 	}
+ 
++	pr_info("snap: loading parameters\n");
++	snap_get_target_boot_params(&snap_bootpart, &snap_cmdline);
++
+ 	/* Get boot order from cbo.dtb */
+ 	boot_order = tegrabl_get_boot_order();
+ 
+diff --git a/bootloader/partner/t18x/common/lib/partitionloader/tegrabl_partition_loader.c b/bootloader/partner/t18x/common/lib/partitionloader/tegrabl_partition_loader.c
+index d918d06..8578e92 100644
+--- a/bootloader/partner/t18x/common/lib/partitionloader/tegrabl_partition_loader.c
++++ b/bootloader/partner/t18x/common/lib/partitionloader/tegrabl_partition_loader.c
+@@ -27,6 +27,7 @@
+ #include <tegrabl_bootimg.h>
+ #include <tegrabl_linuxboot_helper.h>
+ #include <tegrabl_exit.h>
++#include <linux_load.h>
+ 
+ #ifdef CONFIG_ENABLE_A_B_SLOT
+ #include <tegrabl_a_b_boot_control.h>
+@@ -86,6 +87,20 @@ static tegrabl_error_t a_b_get_bin_copy(tegrabl_binary_type_t bin_type,
+ 	/* Do A/B selection for bin_type that have a/b slots */
+ 	switch (bin_type) {
+ 	case TEGRABL_BINARY_KERNEL:
++		if (snap_bootpart) {
++			if (memcmp(snap_bootpart, "kernel", sizeof "kernel") == 0) {
++				pr_info("snap: partition %s selected\n", snap_bootpart);
++				*binary_copy = TEGRABL_BINARY_COPY_PRIMARY;
++				slot = BOOT_SLOT_A;
++		    		goto done;
++			} else if (memcmp(snap_bootpart, "kernel_b", sizeof "kernel_b") == 0) {
++				pr_info("snap: recovery partition %s selected\n", snap_bootpart);
++				*binary_copy = TEGRABL_BINARY_COPY_RECOVERY;
++				slot = BOOT_SLOT_B;
++				goto done;
++	    		}
++	    		pr_error("snap: bad kernel partition name: %s\n", snap_bootpart);
++		}
+ 	case TEGRABL_BINARY_KERNEL_DTB:
+ 	case TEGRABL_BINARY_KERNEL_DTBO:
+ 		/* TODO: add a bin_type that supports a/b */
+-- 
+2.17.1
+

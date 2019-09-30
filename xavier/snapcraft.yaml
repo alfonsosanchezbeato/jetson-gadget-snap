@@ -15,3 +15,37 @@ parts:
   # TODO Build patched cboot
   cboot:
     plugin: nil
+    source: ../cboot-patch
+    source-type: local
+    build-packages:
+      - wget
+      - gcc-aarch64-linux-gnu
+    override-pull: |
+      set -ex
+      snapcraftctl pull
+      wget https://developer.nvidia.com/embedded/dlc/r32-2-1_Release_v1.0/TX2-AGX/sources/public_sources.tbz2
+      tar xf public_sources.tbz2 public_sources/cboot_src_t19x.tbz2
+      tar xf public_sources/cboot_src_t19x.tbz2
+      for f in *patch; do echo "Applying $f:"; patch -p1 < "$f"; done
+    override-build: |
+      set -ex
+      snapcraftctl build
+      ./build.sh
+      cp out/build-t194/lk.bin "$SNAPCRAFT_PART_INSTALL"/cboot_t194.bin
+
+  snap-boot-sel-env:
+    plugin: nil
+    source: snap-boot-sel
+    source-type: local
+    build-packages:
+      - wget
+    override-pull: |
+      snapcraftctl pull
+      wget https://raw.githubusercontent.com/snapcore/snapd/master/include/lk/snappy_boot_v1.h
+    override-build: |
+      set -ex
+      gcc lk-boot-env.c -I/usr/include/ -o lk-boot-env
+      # configure initial boot environment
+      ./lk-boot-env --write ${SNAPCRAFT_PART_INSTALL}/snapbootsel.bin \
+          --boot-0-part kernel --boot-1-part kernel_b
+      ln -sf snapbootsel.bin ${SNAPCRAFT_PART_INSTALL}/lk.conf

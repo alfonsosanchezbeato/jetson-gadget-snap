@@ -1,15 +1,15 @@
 volumes:
   jetson:
-    bootloader: u-boot
+    bootloader: lk
     schema: gpt
     structure:
       - name: snapbootsel
-        role: system-boot
-        type: 0FC63DAF-8483-4772-8E79-3D69D8477DE4
-        filesystem: ext4
-        filesystem-label: snapbootsel
+        role: bootselect
         offset: 20480
-        size: 10485760
+        size: 131072
+        content:
+          - image: snapbootsel.bin
+        type: B214D5E4-D442-45E6-B8C6-01BDCD82D396
       - name: mts-mce
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 512000
@@ -95,9 +95,11 @@ volumes:
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 134217728
       - name: kernel
+        role: bootimg
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 67108864
       - name: kernel_b
+        role: bootimg
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 67108864
       - name: kernel-dtb

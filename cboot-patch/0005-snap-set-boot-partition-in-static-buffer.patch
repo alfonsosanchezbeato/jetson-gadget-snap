@@ -1,0 +1,72 @@
+From a712f431aeaf320833b543fdf600fea7ae559499 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Fri, 27 Sep 2019 17:42:22 +0200
+Subject: [PATCH 5/6] snap: set boot partition in static buffer
+
+Previously we were setting the bootpart parameter of
+snap_get_target_boot_params() to a string in the stack that was freed
+before leaving the function.
+---
+ .../partner/common/lib/linuxboot/snappy_boot.c  | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
+
+diff --git a/bootloader/partner/common/lib/linuxboot/snappy_boot.c b/bootloader/partner/common/lib/linuxboot/snappy_boot.c
+index f4d6848..dc30d12 100644
+--- a/bootloader/partner/common/lib/linuxboot/snappy_boot.c
++++ b/bootloader/partner/common/lib/linuxboot/snappy_boot.c
+@@ -38,6 +38,7 @@
+ #include "snappy_boot.h"
+ 
+ static char cmdline_buf[512];
++static char bootpart_buf[SNAP_NAME_MAX_LEN];
+ 
+ static uint32_t crc32(uint32_t crc, unsigned char *buf, size_t len)
+ {
+@@ -54,7 +55,7 @@ static uint32_t crc32(uint32_t crc, unsigned char *buf, size_t len)
+ 
+ 
+ static int map_bootimg(const SNAP_BOOT_SELECTION_t *boot_select,
+-                       const char *snap_kernel, const char **bootpart);
++                       const char *snap_kernel);
+ static SNAP_BOOT_SELECTION_t *load_environment(void);
+ static int save_environment(SNAP_BOOT_SELECTION_t *boot_select);
+ static SNAP_BOOT_SELECTION_t *load_environment_from_part(const char *partName);
+@@ -91,7 +92,8 @@ void snap_get_target_boot_params(const char **bootpart, const char **cmdline)
+     if ( !strncmp(boot_select->reboot_reason, FACTORY_RESET, strlen(FACTORY_RESET))) {
+       reboot_reason = boot_select->reboot_reason;
+     }
+-    map_bootimg(boot_select, snap_kernel, bootpart);
++    map_bootimg(boot_select, snap_kernel);
++
+     if (reboot_reason)
+         snprintf(cmdline_buf, sizeof(cmdline_buf),
+                  " snap_core=%s snap_kernel=%s %s ", snap_core, snap_kernel, reboot_reason);
+@@ -99,18 +101,19 @@ void snap_get_target_boot_params(const char **bootpart, const char **cmdline)
+         snprintf(cmdline_buf, sizeof(cmdline_buf),
+                  " snap_core=%s snap_kernel=%s ", snap_core, snap_kernel);
+     *cmdline = cmdline_buf;
++    *bootpart = bootpart_buf;
+ 
+-    cleanup:
+-        if(boot_select)
+-            free(boot_select);
++cleanup:
++    if(boot_select)
++        free(boot_select);
+ }
+ 
+-int map_bootimg(const SNAP_BOOT_SELECTION_t *boot_select, const char *snap_kernel, const char **bootpart)
++int map_bootimg(const SNAP_BOOT_SELECTION_t *boot_select, const char *snap_kernel)
+ {
+     for (size_t n = 0; n < SNAP_BOOTIMG_PART_NUM; ++n) {
+         if (!strncmp(boot_select->bootimg_matrix[n][1], snap_kernel, SNAP_NAME_MAX_LEN)) {
+             if (strlen(boot_select->bootimg_matrix[n][0])) {
+-                *bootpart = boot_select->bootimg_matrix[n][0];
++                strncpy(bootpart_buf, boot_select->bootimg_matrix[n][0], SNAP_NAME_MAX_LEN);
+                 return 0;
+             }
+         }
+-- 
+2.17.1
+

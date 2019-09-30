@@ -1,0 +1,249 @@
+From 633116514006377a1aa90f0eb3102a448a8ed8ba Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Alfonso=20S=C3=A1nchez-Beato?=
+ <alfonso.sanchez-beato@canonical.com>
+Date: Fri, 27 Sep 2019 11:16:56 +0200
+Subject: [PATCH 4/6] ubuntu: read/write partitions using tegrabl
+
+tegrabl is cboot's abstration for accessing block devices.
+---
+ .../common/lib/linuxboot/snappy_boot.c        | 162 ++++++++++--------
+ 1 file changed, 95 insertions(+), 67 deletions(-)
+
+diff --git a/bootloader/partner/common/lib/linuxboot/snappy_boot.c b/bootloader/partner/common/lib/linuxboot/snappy_boot.c
+index b460014..f4d6848 100644
+--- a/bootloader/partner/common/lib/linuxboot/snappy_boot.c
++++ b/bootloader/partner/common/lib/linuxboot/snappy_boot.c
+@@ -16,6 +16,7 @@
+  */
+ 
+ #include <stdlib.h>
++#include <stdio.h>
+ #include <debug.h>
+ #include <dev/udc.h>
+ #include <string.h>
+@@ -24,21 +25,17 @@
+ #include <arch/defines.h>
+ #include <malloc.h>
+ 
+-#include <arch/arm.h>
+ #include <dev/flash.h>
+-#include <partition_parser.h>
+-#include <mmc.h>
++#include <tegrabl_debug.h>
++#include <tegrabl_partition_manager.h>
+ 
+ #include <lib/ptable.h>
+ #include <dev/keys.h>
+ #include <platform.h>
+ #include <target.h>
+ 
+-
++#include "snappy_boot_v1.h"
+ #include "snappy_boot.h"
+-#include "smem.h"
+-#include "scm.h"
+-
+ 
+ static char cmdline_buf[512];
+ 
+@@ -56,8 +53,9 @@ static uint32_t crc32(uint32_t crc, unsigned char *buf, size_t len)
+ }
+ 
+ 
+-static int map_bootimg(const SNAP_BOOT_SELECTION_t *boot_select, const char *snap_kernel, const char **bootpart);
+-static SNAP_BOOT_SELECTION_t *load_environment();
++static int map_bootimg(const SNAP_BOOT_SELECTION_t *boot_select,
++                       const char *snap_kernel, const char **bootpart);
++static SNAP_BOOT_SELECTION_t *load_environment(void);
+ static int save_environment(SNAP_BOOT_SELECTION_t *boot_select);
+ static SNAP_BOOT_SELECTION_t *load_environment_from_part(const char *partName);
+ static int save_environment_to_part(SNAP_BOOT_SELECTION_t *boot_select, const char *partName);
+@@ -95,9 +93,11 @@ void snap_get_target_boot_params(const char **bootpart, const char **cmdline)
+     }
+     map_bootimg(boot_select, snap_kernel, bootpart);
+     if (reboot_reason)
+-        snprintf(cmdline_buf, sizeof(cmdline_buf), " snap_core=%s snap_kernel=%s %s ", snap_core, snap_kernel, reboot_reason);
++        snprintf(cmdline_buf, sizeof(cmdline_buf),
++                 " snap_core=%s snap_kernel=%s %s ", snap_core, snap_kernel, reboot_reason);
+     else
+-        snprintf(cmdline_buf, sizeof(cmdline_buf), " snap_core=%s snap_kernel=%s ", snap_core, snap_kernel);
++        snprintf(cmdline_buf, sizeof(cmdline_buf),
++                 " snap_core=%s snap_kernel=%s ", snap_core, snap_kernel);
+     *cmdline = cmdline_buf;
+ 
+     cleanup:
+@@ -138,87 +138,115 @@ static int save_environment(SNAP_BOOT_SELECTION_t *boot_select)
+     // if at least one write works, return success, use two variables, that compiler
+     // does not optimise
+     int r = save_environment_to_part( boot_select, SNAP_BOOTSELECT_PARTITION);
+-    int rb = save_environment_to_part( boot_select, SNAP_BOOTSELECT_PARTITION "bak");
+-    return r & rb;
++    //int rb = save_environment_to_part(boot_select, SNAP_BOOTSELECT_PARTITION "bak");
++    return r /*&& rb*/;
+ }
+ 
+ static SNAP_BOOT_SELECTION_t *load_environment_from_part(const char *partName)
+ {
+-    unsigned long long ptn = 0;
+-    uint32_t block_size = mmc_get_device_blocksize();
+-    uint32_t actual_struct_size, crc;
++    tegrabl_error_t err = TEGRABL_NO_ERROR;
++    struct tegrabl_partition partition;
++    uint64_t partition_size = 0;
+     SNAP_BOOT_SELECTION_t *boot_select = NULL;
+-    int index = INVALID_PTN;
+-    index = partition_get_index(partName);
+-    ptn = partition_get_offset(index);
++    uint64_t conf_sz = sizeof *boot_select;
++    uint32_t crc;
+ 
+-    if(ptn == 0)
+-    {
+-        dprintf(CRITICAL, "snap: load_environment: ERROR: No %s partition found\n", partName);
+-        goto cleanup;
++    pr_info("snap: loading configuration from %s\n", partName);
++
++    /* Get partition info */
++    err = tegrabl_partition_open(partName, &partition);
++    if (err != TEGRABL_NO_ERROR) {
++        pr_error("snap: cannot open partition %s\n", partName);
++        goto error;
+     }
+ 
+-    actual_struct_size = ROUNDUP(sizeof(SNAP_BOOT_SELECTION_t), block_size);
+-    boot_select = malloc(actual_struct_size);
+-    if (boot_select == NULL)
+-    {
+-        dprintf(CRITICAL, "snap: load_environment: ERROR, cannot allocate SNAP_BOOT_SELECTION\n");
+-        goto cleanup;
++    partition_size = tegrabl_partition_size(&partition);
++    pr_info("snap: size of conf partition is: %"PRIu64"\n", partition_size);
++    if (partition_size < conf_sz) {
++        pr_error("snap: %s size is %"PRIu64", less than %"PRIu64"\n",
++                 partName, partition_size, conf_sz);
++        goto error;
+     }
+ 
+-    mmc_set_lun(partition_get_lun(index));
+-    if(mmc_read(ptn, (void *)boot_select, actual_struct_size))
+-    {
+-        dprintf(CRITICAL, "snap: load_environment(%s): read SNAP_BOOT_SELECTION: ERROR, cannot read Snap boot select info\n", partName);
+-        goto cleanup;
++    boot_select = malloc(conf_sz);
++    if (boot_select == NULL) {
++        pr_error("snap: cannot allocate memory to load configuration\n");
++        goto error;
+     }
+ 
+-    dprintf(SPEW, "snap: load_environment(%s): read SNAP_BOOT_SELECTION: SUCCESS, read %d bytes\n", partName, actual_struct_size);
+-    crc = crc32( 0, (unsigned char *)boot_select, sizeof(SNAP_BOOT_SELECTION_t)-sizeof(uint32_t));
+-    if ( boot_select->version != SNAP_BOOTSELECT_VERSION || boot_select->signature != SNAP_BOOTSELECT_SIGNATURE )
+-    {
+-        dprintf(CRITICAL, "snap: load_environment(%s): ERROR version/signature broken [0x%X] vs [0x%X], [0x%X] vs [0x%X]!\n",
+-            partName, boot_select->version, SNAP_BOOTSELECT_VERSION, boot_select->signature, SNAP_BOOTSELECT_SIGNATURE);
+-        goto cleanup;
++    err = tegrabl_partition_read(&partition, boot_select, conf_sz);
++    if (err != TEGRABL_NO_ERROR) {
++        pr_error("snap: error reading partition %s\n", partName);
++        goto error;
+     }
+-    if ( boot_select->crc32 != crc )
++
++    tegrabl_partition_close(&partition);
++
++    pr_info("snap: conf read successfully: %"PRIu64" bytes\n", conf_sz);
++
++    if (boot_select->version != SNAP_BOOTSELECT_VERSION ||
++        boot_select->signature != SNAP_BOOTSELECT_SIGNATURE)
+     {
+-        dprintf(CRITICAL, "snap: load_environment(%s): ERROR crc32 broken [0x%X] vs [0x%X]!\n", partName, boot_select->crc32, crc );
+-        goto cleanup;
+-    } else {
+-        dprintf(INFO, "snap: load_environment(%s): crc32 sucessfully validated\n", partName );
++        pr_error("snap: load_environment(%s): ERROR version/signature "
++                 "broken [0x%X] vs [0x%X], [0x%X] vs [0x%X]!\n",
++                 partName, boot_select->version, SNAP_BOOTSELECT_VERSION,
++                 boot_select->signature, SNAP_BOOTSELECT_SIGNATURE);
++        goto error;
+     }
++    crc = crc32(0, (unsigned char *)boot_select,
++                sizeof(SNAP_BOOT_SELECTION_t) - sizeof(uint32_t));
++    if (boot_select->crc32 != crc) {
++        pr_error("snap: load_environment(%s): ERROR crc32 [0x%X] vs [0x%X]!\n",
++                 partName, boot_select->crc32, crc);
++        goto error;
++    }
++
++    pr_info("snap: load_environment(%s): crc32 validated\n", partName);
++
+     return boot_select;
+ 
+-    cleanup:
+-        if(boot_select)
+-            free(boot_select);
+-        return NULL;
++error:
++    free(boot_select);
++    return NULL;
+ }
+ 
+-static int save_environment_to_part( SNAP_BOOT_SELECTION_t *boot_select, const char *partName)
++static int save_environment_to_part(SNAP_BOOT_SELECTION_t *boot_select,
++                                    const char *part_name)
+ {
+-    unsigned long long ptn = 0;
+-    uint32_t block_size = mmc_get_device_blocksize();
++    struct tegrabl_partition part;
++    tegrabl_error_t status = TEGRABL_NO_ERROR;
+ 
+-    int index = INVALID_PTN;
++    pr_info("snap: updating partition: %s\n", part_name);
+ 
+-    ASSERT(boot_select != NULL);
+-    boot_select->crc32 = crc32( 0, (unsigned char *)boot_select, sizeof(SNAP_BOOT_SELECTION_t)-sizeof(uint32_t));
++    boot_select->crc32 = crc32(0, (unsigned char *)boot_select,
++                               sizeof(SNAP_BOOT_SELECTION_t) - sizeof(uint32_t));
+ 
+-    index = partition_get_index(partName);
+-    ptn = partition_get_offset(index);
++    status = tegrabl_partition_open(part_name, &part);
++    if (status != TEGRABL_NO_ERROR) {
++        pr_error("snap: error opening partition %s for writing\n", part_name);
++        goto end;
++    }
+ 
+-    if(ptn == 0)
+-    {
+-        dprintf(CRITICAL, "snap: save_environment: ERROR: No %s partition found\n", partName);
+-        return -1;
++#if defined(CONFIG_ENABLE_QSPI)
++    uint32_t storage_type;
++
++    storage_type = tegrabl_blockdev_get_storage_type(part.block_device);
++    if (storage_type == TEGRABL_STORAGE_QSPI_FLASH) {
++        status = tegrabl_partition_erase(&part, false);
++        if (status != TEGRABL_NO_ERROR) {
++            pr_error("snap: error erasing partition %s\n", part_name);
++            goto end;
++        }
+     }
++#endif
+ 
+-    if(mmc_write(ptn, ROUNDUP(sizeof(SNAP_BOOT_SELECTION_t), block_size), (void *)boot_select))
+-    {
+-        dprintf(CRITICAL, "snap: save_environment: ERROR, cannot write SNAP_BOOTSELECT info\n");
+-        return -1;
++    status = tegrabl_partition_write(&part, boot_select, sizeof *boot_select);
++    if (status != TEGRABL_NO_ERROR) {
++        pr_error("snap: error writing partition %s\n", part_name);
++        goto end;
+     }
+-    return 0;
++    tegrabl_partition_close(&part);
++
++end:
++    return status;
+ }
+-- 
+2.17.1
+
