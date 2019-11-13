@@ -4,7 +4,7 @@ volumes:
     schema: gpt
     structure:
       - name: snapbootsel
-        role: bootselect
+        role: system-boot-select
         offset: 20480
         size: 131072
         content:
@@ -99,13 +99,13 @@ volumes:
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 134217728
       - name: kernel
-        role: bootimg
+        role: system-boot-image
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 67108864
         content:
           - image: boot.img
       - name: kernel_b
-        role: bootimg
+        role: system-boot-image
         type: EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
         size: 67108864
         content:
